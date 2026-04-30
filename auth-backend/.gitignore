@@ -1,0 +1,75 @@
+### Build output ###
+target/
+build/
+!**/src/main/**/target/
+!**/src/test/**/target/
+!**/src/main/**/build/
+!**/src/test/**/build/
+
+### Maven ###
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+dependency-reduced-pom.xml
+
+### Gradle (if ever used) ###
+.gradle/
+gradle-app.setting
+gradle-app.settings
+
+### Logs ###
+logs/
+*.log
+*.log.*
+
+### OS / Misc ###
+.DS_Store
+Thumbs.db
+
+### IDEs ###
+
+#### STS / Eclipse ####
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache
+
+#### IntelliJ IDEA ####
+.idea/
+*.iws
+*.iml
+*.ipr
+
+#### NetBeans ####
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+
+#### VS Code ####
+.vscode/
+
+### Auth / security config ###
+# Local-only Spring profile configs (keep main application.yaml tracked)
+application-*.yml
+application-*.yaml
+
+### Credentials / environment (do not commit secrets) ###
+.env
+.env.*
+*.keystore
+*.jks
+
+### JWT / RSA keys (generate locally — never commit) ###
+keys/
+*.pem
+src/main/resources/keys/
+
+### Temporary files ###
+*.tmp
+*.swp
+*.swo
+*.orig

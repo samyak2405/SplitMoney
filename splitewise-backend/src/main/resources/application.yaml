@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: splitewise-backend
+  rabbitmq:
+    host: ${RABBITMQ_HOST:localhost}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:guest}
+    password: ${RABBITMQ_PASSWORD:guest}
+  datasource:
+    url: ${SPLITWISE_DB_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=splitmoney}
+    username: ${SPLITWISE_DB_USERNAME:postgres}
+    password: ${SPLITWISE_DB_PASSWORD:}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: never
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: splitmoney
+  flyway:
+    enabled: true
+    default-schema: splitmoney
+    schemas: splitmoney
+    locations: classpath:db/migration
+
+server:
+  port: 8081
+
+notification:
+  queue:
+    exchange: ${NOTIFICATION_EXCHANGE:splitwise.events}
+    routing-key: ${NOTIFICATION_ROUTING_KEY:group.member.added}
+
+user-sync:
+  exchange: ${USER_EVENTS_EXCHANGE:auth.user.events}
+  queue:    ${USER_SYNC_QUEUE:splitmoney.user.sync}
+  dlq:      ${USER_SYNC_DLQ:splitmoney.user.sync.dlq}
+
+user-reconciliation:
+  enabled: ${USER_RECONCILIATION_ENABLED:true}
+  fixed-delay-ms: ${USER_RECONCILIATION_DELAY_MS:300000}   # 5 minutes
+  outbox:
+    fixed-delay-ms: ${NOTIFICATION_OUTBOX_FIXED_DELAY_MS:3000}
+    batch-size: ${NOTIFICATION_OUTBOX_BATCH_SIZE:100}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus,metrics
+  endpoint:
+    health:
+      probes:
+        enabled: true
+
+logging:
+  file:
+    path: logs
+  level:
+    root: INFO
+    "[com.javaproject.splitewise]": INFO
+
+app:
+  jwt:
+    public-key-path: ${APP_JWT_PUBLIC_KEY_PATH:keys/jwt-public.pem}
+    issuer: ${APP_JWT_ISSUER:auth-backend}
+
+payment:
+  grpc:
+    address: ${PAYMENT_GRPC_ADDRESS:localhost:9095}
+
+grpc:
+  server:
+    port: ${GRPC_SERVER_PORT:9091}

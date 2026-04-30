@@ -1,0 +1,3 @@
+-- return_url and checkout_url were incorporated into the payments table in V1
+-- during the schema isolation refactor (H1). This migration is intentionally
+-- a no-op to preserve flyway_schema_history version continuity.

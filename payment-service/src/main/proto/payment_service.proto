@@ -1,0 +1,52 @@
+syntax = "proto3";
+
+package splitmoney.payment.v1;
+
+option java_multiple_files = true;
+option java_package = "com.splitmoney.grpc.payment";
+option java_outer_classname = "PaymentServiceProto";
+
+// gRPC service exposed by payment-service on port 9090.
+// Called by splitwise-backend to initiate and query payments.
+service PaymentGrpcService {
+  rpc InitiatePayment  (InitiatePaymentRequest)  returns (InitiatePaymentResponse);
+  rpc GetPaymentStatus (GetPaymentStatusRequest) returns (GetPaymentStatusResponse);
+  rpc CancelPayment    (CancelPaymentRequest)    returns (CancelPaymentResponse);
+}
+
+message InitiatePaymentRequest {
+  string payer_user_id    = 1;
+  string payee_user_id    = 2;
+  string amount           = 3;  // decimal string e.g. "150.00"
+  string currency         = 4;  // ISO 4217 e.g. "INR"
+  string payment_method   = 5;  // "CARD" | "UPI"
+  string client_request_id = 6; // saga_id from orchestrator
+  string return_url       = 7;  // frontend URL Hyperswitch redirects to
+}
+
+message InitiatePaymentResponse {
+  string payment_id    = 1;
+  string checkout_url  = 2;
+  string status        = 3;
+  bool   success       = 4;
+  string error_message = 5;
+}
+
+message GetPaymentStatusRequest {
+  string payment_id = 1;
+}
+
+message GetPaymentStatusResponse {
+  string payment_id = 1;
+  string status     = 2;
+  string message    = 3;
+}
+
+message CancelPaymentRequest {
+  string payment_id = 1;
+}
+
+message CancelPaymentResponse {
+  bool   success = 1;
+  string message = 2;
+}

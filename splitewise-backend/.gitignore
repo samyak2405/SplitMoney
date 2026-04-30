@@ -1,0 +1,73 @@
+# ------------------------------
+# Build outputs
+# ------------------------------
+target/
+build/
+out/
+dist/
+bin/
+
+# ------------------------------
+# Logs & runtime files
+# ------------------------------
+logs/
+*.log
+*.pid
+*.seed
+*.stackdump
+
+# ------------------------------
+# OS generated files
+# ------------------------------
+.DS_Store
+Thumbs.db
+
+# ------------------------------
+# Environment and secrets
+# ------------------------------
+.env
+.env.*
+*.local
+*.secret
+*.key
+*.p12
+*.jks
+*.keystore
+
+# ------------------------------
+# IDE/editor files
+# ------------------------------
+.idea/
+*.iws
+*.iml
+*.ipr
+.vscode/
+.settings/
+.classpath
+.project
+.factorypath
+.apt_generated/
+.springBeans
+.sts4-cache/
+
+# ------------------------------
+# Tooling caches
+# ------------------------------
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# ------------------------------
+# Test artifacts
+# ------------------------------
+surefire-reports/
+failsafe-reports/
+coverage/
+
+# ------------------------------
+# Temporary files
+# ------------------------------
+*.tmp
+*.temp
+*.swp
+*.swo
+*~

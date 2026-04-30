@@ -1,0 +1,158 @@
+_format_version: "3.0"
+_transform: true
+
+plugins:
+  - name: prometheus
+    config:
+      bandwidth_metrics: true
+      latency_metrics: true
+      status_code_metrics: true
+      upstream_health_metrics: true
+      per_consumer: true
+  - name: cors
+    config:
+      origins:
+        - http://localhost:5173
+        - http://localhost:5174
+        - http://localhost:3000
+      methods:
+        - GET
+        - POST
+        - PUT
+        - PATCH
+        - DELETE
+        - OPTIONS
+      headers:
+        - Authorization
+        - Content-Type
+        - X-Request-Id
+      exposed_headers:
+        - X-Request-Id
+      credentials: true
+      max_age: 3600
+
+services:
+  - name: auth-service
+    # Docker upstream disabled for now:
+    # url: http://auth-backend:8080
+    url: http://host.docker.internal:8087
+    routes:
+      - name: auth-public-routes
+        paths:
+          - /api/auth/v1/register
+          - /api/auth/v1/login
+          - /api/auth/v1/login/google
+          - /api/auth/v1/verify-registration-otp
+          - /api/auth/v1/resend-registration-otp
+          - /api/auth/v1/forgot-password
+          - /api/auth/v1/reset-password
+        strip_path: false
+        plugins:
+          - name: rate-limiting
+            config:
+              minute: 120
+              policy: local
+      - name: auth-protected-routes
+        paths:
+          - /api/auth
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+      - name: auth-health-route
+        paths:
+          - /actuator/health
+        strip_path: false
+
+  - name: splitwise-service
+    # Docker upstream disabled for now:
+    # url: http://splitwise-backend:8081
+    url: http://host.docker.internal:8081
+    routes:
+      - name: splitwise-api-routes
+        paths:
+          - /api/splitwise
+          - /api/v1/expenses
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+
+  - name: notification-service
+    # Docker upstream disabled for now:
+    # url: http://notification:8083
+    url: http://host.docker.internal:8083
+    routes:
+      - name: notification-api-routes
+        paths:
+          - /api/notifications
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+
+  - name: payment-service
+    # Docker upstream disabled for now:
+    # url: http://payment-service:8086
+    url: http://host.docker.internal:8086
+    routes:
+      - name: payment-api-routes
+        paths:
+          - /v1/payments
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+      - name: payment-webhook-route
+        paths:
+          - /v1/webhooks/hyperswitch
+        strip_path: false
+      - name: payment-health-route
+        paths:
+          - /payment/actuator/health
+        strip_path: false
+        plugins:
+          - name: request-transformer
+            config:
+              replace:
+                uri: /actuator/health
+
+consumers:
+  - username: auth-backend-issuer
+    jwt_secrets:
+      - key: auth-backend
+        algorithm: RS256
+        rsa_public_key: |
+          -----BEGIN PUBLIC KEY-----
+          MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxGP3z8SiZvc1QzQgjGKT
+          SQKBqCiW14Tktwf50dMlMufBP+e9SGtLf3PIDaNFmKpdYv0vevPcOlJs+c25yp48
+          lqNZjMoVIK7xps6JCQtjgytHo2TbWvs/1GeB2/2WsNXjXnn0yvG/pBCpFgush/H0
+          EWqa6PMwDV/lEkQAUFGPYo92PFEWT+vcUPphkGCqbII3phWWMaRE0FEQQULziUSR
+          FtngPtEY4GBHkIh1ipXqAyw+sWBS8i6NdOpgfiLPDoaSHUTCVcv0l0ApUJxI9SAz
+          k+6NMzc4tunhVFSYFn6SDG38ueac5blK3Nb5SWNtoDXpPDF6bpnfYugScjmQpErG
+          CQIDAQAB
+          -----END PUBLIC KEY-----

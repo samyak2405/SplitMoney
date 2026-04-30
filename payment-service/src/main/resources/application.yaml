@@ -1,0 +1,117 @@
+server:
+  port: 8086
+
+grpc:
+  server:
+    port: ${GRPC_SERVER_PORT:9095}
+  client:
+    settlement-callback:
+      address: ${GRPC_SPLITWISE_ADDRESS:localhost:9091}
+
+spring:
+  application:
+    name: payment-service
+  datasource:
+    url: ${PAYMENT_DB_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=paymentdb}
+    username: ${PAYMENT_DB_USERNAME:postgres}
+    password: ${PAYMENT_DB_PASSWORD:}
+    hikari:
+      maximum-pool-size: 30
+      minimum-idle: 10
+  jpa:
+    hibernate:
+      ddl-auto: validate
+    properties:
+      hibernate:
+        default_schema: paymentdb
+        jdbc:
+          batch_size: 25
+    open-in-view: false
+  flyway:
+    enabled: true
+    default-schema: paymentdb
+    schemas: paymentdb
+    locations: classpath:db/migration
+    baseline-on-migrate: true
+    baseline-version: 3
+  data:
+    redis:
+      host: localhost
+      port: 6379
+  kafka:
+    bootstrap-servers: localhost:9092
+    producer:
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer
+      properties:
+        acks: all
+        enable.idempotence: true
+    consumer:
+      group-id: payment-service
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      auto-offset-reset: earliest
+    listener:
+      ack-mode: record
+      concurrency: 3
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+  endpoint:
+    health:
+      show-details: always
+
+logging:
+  level:
+    root: INFO
+    com.splitmoney.application: INFO
+  pattern:
+    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{requestId}] %logger{36} : %msg%n"
+
+app:
+  hyperswitch:
+    base-url: ${APP_HYPERSWITCH_BASE_URL:https://sandbox.hyperswitch.io}
+    api-key: ${APP_HYPERSWITCH_API_KEY:snd_ne7NjpqEecEwwT5NHIhYeajoA5IWjZldbT5zRqp9ZlMUUSgsBssiP7iyOuwe50Me}
+    publishable-key: ${APP_HYPERSWITCH_PUBLISHABLE_KEY:pk_snd_2e5983399c044f6b99b637c79635f713}
+    webhook-secret: ${APP_HYPERSWITCH_WEBHOOK_SECRET:WpINxDiFliJy1aIe4pjTFGttY87CbmUyX4LzVYwMQ9YNRJuOyhaUJVJip9ikGa9l}
+    connect-timeout-ms: 2000
+    read-timeout-ms: 10000
+    max-retries: 3
+  idempotency:
+    ttl-hours: 24
+  outbox:
+    relay:
+      fixed-delay-ms: 2000
+      batch-size: 50
+  payment:
+    stale-processing-seconds: 300
+  notifications:
+    topic: payment.notification.events
+  settlement:
+    splitwise-base-url: ${SPLITWISE_BASE_URL:http://localhost:8081}
+    connect-timeout-ms: 3000
+    read-timeout-ms: 5000
+
+---
+spring:
+  config:
+    activate:
+      on-profile: test
+  datasource:
+    url: jdbc:h2:mem:paymentdb;MODE=PostgreSQL;DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        default_schema: PUBLIC
+  flyway:
+    enabled: false
+  kafka:
+    listener:
+      auto-startup: false

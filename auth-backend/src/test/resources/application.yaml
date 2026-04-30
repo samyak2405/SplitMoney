@@ -1,0 +1,21 @@
+# Test overrides — applied automatically for all @SpringBootTest runs.
+# Provides the values that have no defaults in the main application.yaml
+# so the Spring context can load without real external credentials.
+
+app:
+  oauth:
+    google:
+      enabled: false
+      client-id: test-google-client-id
+      client-secret: test-google-client-secret
+  jwt:
+    # These resolve via classpath fallback in JwtService (test-resources/keys/)
+    private-key-path: keys/jwt-private.pem
+    public-key-path: keys/jwt-public.pem
+
+spring:
+  flyway:
+    # Flyway already ran (schemas created separately). Tests that need a clean DB
+    # should use @Sql or Testcontainers instead of relying on Flyway in the context.
+    baseline-on-migrate: true
+    baseline-version: 0

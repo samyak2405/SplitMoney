@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package splitmoney.settlement.v1;
+
+option java_multiple_files = true;
+option java_package = "com.javaproject.grpc.settlement";
+option java_outer_classname = "SettlementCallbackProto";
+
+// gRPC service exposed by splitwise-backend on port 9091.
+// Called by payment-service when a payment reaches a terminal state.
+service SettlementCallbackService {
+  rpc NotifySettlementComplete (SettlementCompleteEvent) returns (SettlementAck);
+  rpc NotifySettlementFailed   (SettlementFailedEvent)   returns (SettlementAck);
+}
+
+message SettlementCompleteEvent {
+  string payment_id    = 1;
+  string saga_id       = 2;  // client_request_id used during InitiatePayment
+  string payer_user_id = 3;
+  string payee_user_id = 4;
+  string amount        = 5;
+  string currency      = 6;
+}
+
+message SettlementFailedEvent {
+  string payment_id = 1;
+  string saga_id    = 2;
+  string reason     = 3;
+}
+
+message SettlementAck {
+  bool   received = 1;
+  string message  = 2;
+}

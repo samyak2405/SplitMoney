@@ -1,0 +1,15 @@
+package com.splitwise.notification.domain;
+
+public enum NotificationEventType {
+    REGISTRATION_OTP,
+    PASSWORD_RESET_OTP,
+    EMAIL_VERIFICATION,
+    PASSWORD_RESET,
+    EXPENSE_CREATED,
+    EXPENSE_ADDED_AGAINST_USER,
+    GROUP_MEMBER_ADDED,
+    GROUP_MEMBER_REMOVED,
+    SETTLEMENT_DUE,
+    PAYMENT_RECEIVED,
+    GENERIC
+}
