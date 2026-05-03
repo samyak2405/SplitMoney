@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
     <springProperty scope="context" name="appName" source="spring.application.name" defaultValue="notification-service"/>
+    <springProperty scope="context" name="LOKI_URL" source="logging.loki.url" defaultValue="http://localhost:3100"/>
     <springProperty scope="context" name="logDir" source="logging.file.path" defaultValue="logs"/>
     <springProperty scope="context" name="rootLogLevel" source="logging.level.root" defaultValue="INFO"/>
     <springProperty scope="context" name="maxFileSize" source="logging.logback.rollingpolicy.max-file-size" defaultValue="50MB"/>
@@ -59,8 +60,32 @@
         <appender-ref ref="JSON_FILE" />
     </appender>
 
+    <!-- Loki appender — async, non-blocking, sends JSON logs to Loki -->
+    <appender name="LOKI" class="com.github.loki4j.logback.Loki4jAppender">
+        <http>
+            <url>${LOKI_URL}/loki/api/v1/push</url>
+            <connectionTimeoutMs>5000</connectionTimeoutMs>
+            <requestTimeoutMs>5000</requestTimeoutMs>
+        </http>
+        <format>
+            <label>
+                <pattern>app=${appName},level=%level</pattern>
+            </label>
+            <message class="com.github.loki4j.logback.JsonLayout"/>
+        </format>
+        <batchMaxItems>1000</batchMaxItems>
+        <batchTimeoutMs>5000</batchTimeoutMs>
+    </appender>
+    <appender name="ASYNC_LOKI" class="ch.qos.logback.classic.AsyncAppender">
+        <queueSize>2048</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <neverBlock>true</neverBlock>
+        <appender-ref ref="LOKI"/>
+    </appender>
+
     <root level="${rootLogLevel}">
         <appender-ref ref="JSON_CONSOLE" />
         <appender-ref ref="ASYNC_JSON_FILE" />
+        <appender-ref ref="ASYNC_LOKI" />
     </root>
 </configuration>

@@ -2,11 +2,13 @@ package com.javaproject.splitewise.controller;
 
 import com.javaproject.splitewise.dto.request.*;
 import com.javaproject.splitewise.dto.response.ApiResponse;
+import com.javaproject.splitewise.dto.response.GetGroupDetailsResponse;
 import com.javaproject.splitewise.enums.ApiTypeEnum;
 import com.javaproject.splitewise.exception.custom.ApiValidationException;
 import com.javaproject.splitewise.security.JwtAuthenticationFilter;
 import com.javaproject.splitewise.service.Processor;
 import com.javaproject.splitewise.service.ProcessorFactory;
+import com.javaproject.splitewise.service.impl.GetGroupMembersService;
 import com.javaproject.splitewise.validator.Validator;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
@@ -27,6 +29,7 @@ public class SplitwiseController {
 
     private final ValidatoryFactory validatorFactory;
     private final ProcessorFactory processorFactory;
+    private final GetGroupMembersService groupMembersService;
 
     @PostMapping("/v1/create-group")
     public ResponseEntity<ApiResponse<?>> createGroup(
@@ -119,6 +122,21 @@ public class SplitwiseController {
         Processor processor = processorFactory.getProcessor(ApiTypeEnum.GET_USER_BALANCES.name());
         ApiResponse<?> apiResponse = processor.processApiRequest(request);
         return new ResponseEntity<>(apiResponse, HttpStatus.OK);
+    }
+
+    @GetMapping("/v1/groups/{groupId}/members")
+    public ResponseEntity<ApiResponse<GetGroupDetailsResponse>> getGroupMembers(
+            @PathVariable Long groupId,
+            HttpServletRequest httpRequest
+    ) {
+        UUID userId = getAuthenticatedUserId(httpRequest);
+        GetGroupDetailsResponse data = groupMembersService.getMembers(groupId, userId);
+        return ResponseEntity.ok(ApiResponse.<GetGroupDetailsResponse>builder()
+                .success(true)
+                .responseCode(String.valueOf(HttpStatus.OK.value()))
+                .responseMessage("Group members fetched successfully")
+                .data(data)
+                .build());
     }
 
     private UUID getAuthenticatedUserId(HttpServletRequest request) {

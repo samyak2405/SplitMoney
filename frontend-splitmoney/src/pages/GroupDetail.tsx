@@ -13,6 +13,14 @@ import Input from '../components/ui/Input'
 import { getGroupDetails, getUserBalances, addMember } from '../api/splitwise'
 import { useAuth } from '../context/AuthContext'
 import { extractMessage } from '../utils/messages'
+import { ChatProvider, useChatContext } from '../context/ChatContext'
+import MessageList from '../components/chat/MessageList'
+import ChatInput from '../components/chat/ChatInput'
+import TypingIndicator from '../components/chat/TypingIndicator'
+import PresenceBar from '../components/chat/PresenceBar'
+import PresenceDot from '../components/chat/PresenceDot'
+import SharedPane from '../components/chat/SharedPane'
+import SplityPane from '../components/splity/SplityPane'
 
 function fmt(n) {
   const abs = Math.abs(Number(n) || 0).toFixed(2)
@@ -24,44 +32,56 @@ export default function GroupDetail() {
   const navigate = useNavigate()
   const { id } = useParams()
   const groupName = decodeURIComponent(id)
-  const { handleUnauthorized } = useAuth()
+  const { session, handleUnauthorized } = useAuth()
 
   const [tab, setTab] = useState('expenses')
   const [addMemberOpen, setAddMemberOpen] = useState(false)
+  const [chatMounted, setChatMounted] = useState(false)
+  const [splityMounted, setSplityMounted] = useState(false)
 
   const [group, setGroup] = useState(null)
   const [balances, setBalances] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(null)
 
-  const loadData = async () => {
-    setLoading(true)
+  // Lazy-mount chat/splity on first visit so state survives tab switches
+  useEffect(() => {
+    if (tab === 'chat') setChatMounted(true)
+    if (tab === 'splity') setSplityMounted(true)
+  }, [tab])
+
+  // initial=true shows the full-page spinner; false does a silent background refresh
+  // (used by onExpenseCreated so stats update without unmounting SplityPane)
+  const loadData = async (initial = false) => {
+    if (initial) setLoading(true)
     setError(null)
-    const [detailsResult, balancesResult] = await Promise.all([
-      getGroupDetails({ groupName }),
-      getUserBalances({ groupName }),
-    ])
+    try {
+      const [detailsResult, balancesResult] = await Promise.all([
+        getGroupDetails({ groupName }),
+        getUserBalances({ groupName }),
+      ])
 
-    if (detailsResult.status === 401 || balancesResult.status === 401) {
-      handleUnauthorized((detailsResult.status === 401 ? detailsResult : balancesResult).body)
-      return
+      if (detailsResult.status === 401 || balancesResult.status === 401) {
+        handleUnauthorized((detailsResult.status === 401 ? detailsResult : balancesResult).body)
+        return
+      }
+
+      if (detailsResult.ok && detailsResult.body?.data) {
+        setGroup(detailsResult.body.data)
+      } else if (initial) {
+        setError(extractMessage(detailsResult.body, 'Failed to load group'))
+      }
+
+      if (balancesResult.ok && balancesResult.body?.data) {
+        setBalances(balancesResult.body.data)
+      }
+    } finally {
+      if (initial) setLoading(false)
     }
-
-    if (detailsResult.ok && detailsResult.body?.data) {
-      setGroup(detailsResult.body.data)
-    } else {
-      setError(extractMessage(detailsResult.body, 'Failed to load group'))
-    }
-
-    if (balancesResult.ok && balancesResult.body?.data) {
-      setBalances(balancesResult.body.data)
-    }
-
-    setLoading(false)
   }
 
   useEffect(() => {
-    loadData()
+    loadData(true)
   }, [groupName])
 
   const BackBtn = (
@@ -114,7 +134,7 @@ export default function GroupDetail() {
           <Button variant="ghost" onClick={() => setAddMemberOpen(true)}>
             <Icon name="userPlus" size={16} /> Add member
           </Button>
-          <Button variant="ghost" onClick={loadData} title="Refresh balances">
+          <Button variant="ghost" onClick={() => loadData()} title="Refresh balances">
             <Icon name="refreshCw" size={16} />
           </Button>
           <Button variant="ghost" onClick={() => navigate('/settle', { state: { groupName: group.groupName, groupId: group.groupId, currency: group.currency } })}>
@@ -140,7 +160,7 @@ export default function GroupDetail() {
 
       {/* Tabs */}
       <div style={{ display: 'flex', gap: 4, marginBottom: 20, borderBottom: '1px solid var(--border-subtle)' }}>
-        {['expenses', 'balances', 'members', 'settings'].map(t => (
+        {['expenses', 'balances', 'chat', 'splity', 'members', 'settings'].map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -234,6 +254,26 @@ export default function GroupDetail() {
         </Card>
       )}
 
+      {/* Chat tab — keep mounted once visited so WebSocket + messages survive tab switches */}
+      {chatMounted && (
+        <ChatProvider groupId={group.groupId}>
+          <div style={{ display: tab === 'chat' ? 'block' : 'none' }}>
+            <ChatPanel groupId={group.groupId} members={members} session={session} />
+          </div>
+        </ChatProvider>
+      )}
+
+      {/* Splity tab — keep mounted once visited so conversation state survives tab switches */}
+      {splityMounted && (
+        <div style={{ display: tab === 'splity' ? 'block' : 'none' }}>
+          <SplityPane
+            groupId={String(group.groupId)}
+            members={members}
+            onExpenseCreated={() => loadData()}
+          />
+        </div>
+      )}
+
       {/* Members tab */}
       {tab === 'members' && (
         <Card style={{ padding: 24 }}>
@@ -251,7 +291,12 @@ export default function GroupDetail() {
                 borderBottom: '1px solid var(--border-subtle)',
               }}
             >
-              <Avatar name={m.email.split('@')[0]} size={44} />
+              <div style={{ position: 'relative', flexShrink: 0 }}>
+                <Avatar name={m.email.split('@')[0]} size={44} />
+                <span style={{ position: 'absolute', bottom: 1, right: 1 }}>
+                  <PresenceDot isOnline={false} size={10} />
+                </span>
+              </div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 600 }}>{m.email.split('@')[0]}</div>
                 <div style={{ fontSize: 12, color: 'var(--fg3)' }}>{m.email}</div>
@@ -291,6 +336,44 @@ export default function GroupDetail() {
         onSuccess={loadData}
       />
     </AppShell>
+  )
+}
+
+function ChatPanel({ groupId, members, session }) {
+  const [chatPane, setChatPane] = useState<'conversation' | 'shared'>('conversation')
+  const { typingUserEmails } = useChatContext()
+
+  const tabStyle = (active: boolean): React.CSSProperties => ({
+    padding: '10px 20px', background: 'none', border: 'none',
+    cursor: 'pointer', fontSize: 13, fontWeight: 600,
+    color: active ? 'var(--fg1)' : 'var(--fg3)',
+    borderBottom: active ? '2px solid var(--sm-green-500, #22c55e)' : '2px solid transparent',
+    marginBottom: -1, transition: 'all 150ms',
+  })
+
+  return (
+    <Card style={{ padding: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', height: '65vh' }}>
+      <div style={{ display: 'flex', borderBottom: '1px solid var(--border-subtle)', flexShrink: 0 }}>
+        <button style={tabStyle(chatPane === 'conversation')} onClick={() => setChatPane('conversation')}>
+          Conversation
+        </button>
+        <button style={tabStyle(chatPane === 'shared')} onClick={() => setChatPane('shared')}>
+          Shared
+        </button>
+      </div>
+
+      {chatPane === 'conversation' ? (
+        <>
+          <PresenceBar members={members} />
+          <MessageList groupId={groupId} />
+          <TypingIndicator typingUserEmails={typingUserEmails} currentUserEmail={session?.email ?? ''} />
+        </>
+      ) : (
+        <SharedPane groupId={groupId} />
+      )}
+
+      <ChatInput groupId={groupId} />
+    </Card>
   )
 }
 

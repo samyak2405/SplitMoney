@@ -63,13 +63,16 @@ management:
   endpoint:
     health:
       show-details: always
+  metrics:
+    tags:
+      application: payment-service
 
 logging:
   level:
     root: INFO
     com.splitmoney.application: INFO
-  pattern:
-    console: "%d{yyyy-MM-dd'T'HH:mm:ss.SSSXXX} %-5level [%thread] [%X{requestId}] %logger{36} : %msg%n"
+  loki:
+    url: ${LOKI_URL:http://localhost:3100}
 
 app:
   hyperswitch:

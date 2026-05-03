@@ -141,6 +141,65 @@ services:
               replace:
                 uri: /actuator/health
 
+  - name: document-service
+    # Docker upstream disabled for now:
+    # url: http://document-service:8084
+    url: http://host.docker.internal:8084
+    routes:
+      - name: document-api-routes
+        paths:
+          - /api/docs
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+
+  - name: chat-service
+    # Docker upstream disabled for now:
+    # url: http://chat-service:8085
+    url: http://host.docker.internal:8085
+    routes:
+      - name: chat-api-routes
+        paths:
+          - /api/chat
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+
+  - name: ai-service
+    url: http://host.docker.internal:8088
+    routes:
+      - name: ai-splity-api
+        paths:
+          - /api/ai/v1
+        strip_path: false
+        plugins:
+          - name: jwt
+            config:
+              claims_to_verify:
+                - exp
+              key_claim_name: iss
+              cookie_names:
+                - access_token
+              run_on_preflight: false
+      - name: ai-health-route
+        paths:
+          - /api/ai
+        strip_path: false
+
 consumers:
   - username: auth-backend-issuer
     jwt_secrets:

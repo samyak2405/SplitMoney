@@ -75,6 +75,8 @@ logging:
       max-file-size: ${LOG_MAX_FILE_SIZE:50MB}
       max-history: ${LOG_MAX_HISTORY:30}
       total-size-cap: ${LOG_TOTAL_SIZE_CAP:5GB}
+  loki:
+    url: ${LOKI_URL:http://localhost:3100}
 
 notification:
   splitwise:

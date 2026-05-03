@@ -1,0 +1,55 @@
+server:
+  port: ${DOCUMENT_SERVICE_PORT:8084}
+
+spring:
+  application:
+    name: document-service
+  datasource:
+    url: ${DOCUMENT_DB_URL:jdbc:postgresql://localhost:5432/postgres?currentSchema=documentdb}
+    username: ${DOCUMENT_DB_USERNAME:postgres}
+    password: ${DOCUMENT_DB_PASSWORD:}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+    default-schema: documentdb
+    schemas: documentdb
+  servlet:
+    multipart:
+      max-file-size: ${MAX_FILE_SIZE_MB:10}MB
+      max-request-size: ${MAX_FILE_SIZE_MB:10}MB
+
+storage:
+  type: ${STORAGE_TYPE:local}
+  local:
+    base-path: ${STORAGE_LOCAL_PATH:./uploads}
+  s3:
+    bucket: ${AWS_S3_BUCKET:}
+    region: ${AWS_REGION:us-east-1}
+    access-key: ${AWS_ACCESS_KEY_ID:}
+    secret-key: ${AWS_SECRET_ACCESS_KEY:}
+  max-file-size-mb: ${MAX_FILE_SIZE_MB:10}
+
+app:
+  jwt:
+    public-key-path: ${APP_JWT_PUBLIC_KEY_PATH:keys/jwt-public.pem}
+    issuer: ${APP_JWT_ISSUER:auth-backend}
+  cors:
+    allowed-origins: ${APP_CORS_ALLOWED_ORIGINS:http://localhost:5173,http://localhost:3000}
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  metrics:
+    export:
+      prometheus:
+        enabled: true
+
+logging:
+  loki:
+    url: ${LOKI_URL:http://localhost:3100}

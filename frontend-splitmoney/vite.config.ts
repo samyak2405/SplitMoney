@@ -16,6 +16,18 @@ export default defineConfig({
         target: 'http://localhost:8081',
         changeOrigin: true,
       },
+      '/api/docs': {
+        target: 'http://localhost:8084',
+        changeOrigin: true,
+      },
+      '/api/chat': {
+        target: 'http://localhost:8085',
+        changeOrigin: true,
+      },
+      '/api/ai': {
+        target: 'http://localhost:8088',
+        changeOrigin: true,
+      },
       '/api': {
         target: 'http://localhost:8000',
         changeOrigin: true,
@@ -26,6 +38,11 @@ export default defineConfig({
       },
       '/ws-notifications': {
         target: 'http://localhost:8083',
+        ws: true,
+        changeOrigin: true,
+      },
+      '/ws-chat': {
+        target: 'http://localhost:8085',
         ws: true,
         changeOrigin: true,
       },

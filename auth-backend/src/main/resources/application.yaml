@@ -64,6 +64,8 @@ logging:
     com.javaproject.application: DEBUG
     org.springframework.web: INFO
     org.hibernate.SQL: DEBUG
+  loki:
+    url: ${LOKI_URL:http://localhost:3100}
 
 app:
   oauth:

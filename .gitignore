@@ -1,0 +1,53 @@
+# ── Secrets & local env ──────────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+!.env.dev.example
+!.env.prod.example
+config/secrets/*
+!config/secrets/.gitkeep
+
+# ── JWT / RSA keys (generate locally — never commit) ─────────────────────────
+keys/
+*.pem
+**/src/main/resources/keys/
+
+# ── Java build artifacts ──────────────────────────────────────────────────────
+target/
+build/
+*.class
+*.jar
+*.war
+dependency-reduced-pom.xml
+
+# ── Maven wrapper jar ─────────────────────────────────────────────────────────
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Node / frontend ──────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+*.local
+
+# ── IDE files ─────────────────────────────────────────────────────────────────
+.idea/
+.vscode/
+*.iml
+*.iws
+*.ipr
+.project
+.classpath
+.settings/
+
+# ── OS metadata ───────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Runtime logs ──────────────────────────────────────────────────────────────
+logs/
+*.log
+*.log.*
+*.log.gz
+
+# ── Trash folder (local cleanup staging) ─────────────────────────────────────
+trash/
